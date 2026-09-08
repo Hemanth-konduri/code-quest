@@ -14,6 +14,7 @@ import { Button } from "./ui/button";
 import Link from "next/link";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Textarea } from "./ui/textarea";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 const questionData = {
@@ -88,9 +89,169 @@ The middleware runs but the redirects don't work properly. Sometimes users can s
   userVote: null, // null, 'up', or 'down'
 };
 
+// Mock answers data
+const answersData = [
+  {
+    id: 1,
+    content: `The issue you're experiencing is likely due to the middleware configuration and how NextJS handles redirects. Here are a few things to check:
+
+## 1. Middleware File Location
+Make sure your \`middleware.ts\` file is in the correct location - it should be in the root of your project (same level as \`pages\` or \`app\` directory).
+
+## 2. Import Statements
+You're missing some important imports in your middleware:
+
+\`\`\`javascript
+import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
+\`\`\`
+
+## 3. Updated Middleware Code
+
+\`\`\`javascript
+import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
+export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Get token from cookies
+  const token = request.cookies.get("authToken")?.value;
+  
+  if (!token) {
+    console.log("[middleware] No token found, redirecting to login");
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  try {
+    // Verify the JWT token
+    const { payload } = await jwtVerify(token, secret);
+    console.log("[middleware] Token verified for user:", payload.sub);
+    return NextResponse.next();
+  } catch (error) {
+    console.log("[middleware] Token verification failed:", error);
+    // Clear the invalid token
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('authToken');
+    return response;
+  }
+}
+
+export const config = {
+  matcher: [
+    '/dashboard/:path*',
+    '/add-todo/:path*',
+    '/edit-todo/:path*',
+    '/settings/:path*'
+  ]
+}
+\`\`\`
+
+## Key Changes:
+- Added proper imports
+- Redirect to \`/login\` instead of \`/\`
+- Clear invalid tokens from cookies
+- Simplified matcher patterns
+- Better error handling
+
+This should resolve your middleware issues.`,
+    votes: 5,
+    author: {
+      id: 1,
+      name: "John Doe",
+      reputation: 15420,
+      avatar: "JD",
+    },
+    answeredDate: "2 days ago",
+    isAccepted: true,
+    userVote: null,
+  },
+  {
+    id: 2,
+    content: `Another approach you might consider is using NextAuth.js which handles authentication middleware automatically:
+
+## Installation
+\`\`\`bash
+npm install next-auth
+\`\`\`
+
+## Configuration
+Create \`pages/api/auth/[...nextauth].js\`:
+
+\`\`\`javascript
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+
+export default NextAuth({
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        // Add your authentication logic here
+        const user = await authenticateUser(credentials)
+        return user ? user : null
+      }
+    })
+  ],
+  pages: {
+    signIn: '/login'
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      return { ...token, ...user }
+    },
+    async session({ session, token }) {
+      return { ...session, user: token }
+    }
+  }
+})
+\`\`\`
+
+## Middleware with NextAuth
+\`\`\`javascript
+import { withAuth } from 'next-auth/middleware'
+
+export default withAuth(
+  function middleware(req) {
+    // Additional middleware logic here
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token
+    }
+  }
+)
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/settings/:path*']
+}
+\`\`\`
+
+This approach is more robust and handles many edge cases automatically.`,
+    votes: 2,
+    author: {
+      id: 2,
+      name: "Felix Rodriguez",
+      reputation: 799,
+      avatar: "FR",
+    },
+    answeredDate: "1 day ago",
+    isAccepted: false,
+    userVote: null,
+  },
+];
+
 const QuestionDetail = ({ questionId }: any) => {
   const router = useRouter();
   const [question, setquestion] = useState<any>(questionData);
+  const [newanswer, setnewAnswer] = useState("");
+  const [isSubmitting, setisSubmitting] = useState(false);
 
   const handleVote = (vote: String) => {
     // API integration will be added in later steps
@@ -99,11 +260,24 @@ const QuestionDetail = ({ questionId }: any) => {
   const handlebookmark = () => {
     setquestion((prev: any) => ({ ...prev, isBookmarked: !prev.isBookmarked }));
   };
+  const handleSubmitanswer = () => {
+    if (!newanswer.trim()) return;
+    setisSubmitting(true);
+    // API integration will be added in later steps
+    toast.info("Answer submission will work after backend integration");
+    setnewAnswer("");
+    setisSubmitting(false);
+  };
   const handleDelete = () => {
     // API integration will be added in later steps
     if (!window.confirm("Are you sure you want to delete this question?"))
       return;
     toast.info("Delete will work after backend integration");
+  };
+  const handleDeleteanswer = (id: any) => {
+    if (!window.confirm("Are you sure you want to delete this answer?"))
+      return;
+    toast.info("Answer delete will work after backend integration");
   };
 
   return (
@@ -261,6 +435,136 @@ const QuestionDetail = ({ questionId }: any) => {
                 </div>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+      {/* Answers Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
+          {answersData.length} Answer
+          {answersData.length !== 1 ? "s" : ""}
+        </h2>
+        <div className="space-y-6">
+          {answersData.map((ans: any) => (
+            <Card key={ans.id} className={""}>
+              <CardContent className="p-0">
+                <div className="flex flex-col sm:flex-row">
+                  {/* Answer Content */}
+                  <div className="flex-1 p-4 sm:p-6">
+                    <div className="prose max-w-none mb-6">
+                      <div
+                        className="text-gray-800 leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: ans.content
+                            .replace(
+                              /## (.*)/g,
+                              '<h3 class="text-lg font-semibold mt-6 mb-3 text-gray-900">$1</h3>'
+                            )
+                            .replace(
+                              /```(\w+)?\n([\s\S]*?)```/g,
+                              '<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-4"><code class="text-sm">$2</code></pre>'
+                            )
+                            .replace(
+                              /`([^`]+)`/g,
+                              '<code class="bg-gray-100 px-2 py-1 rounded text-sm">$1</code>'
+                            )
+                            .replace(/\n\n/g, '</p><p class="mb-4">')
+                            .replace(/^/, '<p class="mb-4">')
+                            .replace(/$/, "</p>")
+                            .replace(
+                              /\n(\d+\. .*)/g,
+                              '<ol class="list-decimal list-inside my-4"><li>$1</li></ol>'
+                            ),
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-600 hover:text-gray-800"
+                        >
+                          <Share className="w-4 h-4 mr-1" />
+                          Share
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-600 hover:text-gray-800"
+                        >
+                          <Flag className="w-4 h-4 mr-1" />
+                          Flag
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteanswer(ans.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-gray-600">
+                          answered {ans.answeredDate}
+                        </span>
+                        <Link
+                          href={`/users/${ans.author.id}`}
+                          className="flex items-center gap-2 hover:bg-blue-50 p-2 rounded"
+                        >
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-sm">
+                              {ans.author.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-blue-600 hover:text-blue-800 font-medium">
+                              {ans.author.name}
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      {/* Your Answer Form */}
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900">
+            Your Answer
+          </h3>
+          <Textarea
+            placeholder="Write your answer here... You can use Markdown formatting."
+            value={newanswer}
+            onChange={(e) => setnewAnswer(e.target.value)}
+            className="min-h-32 mb-4 resize-none"
+          />
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <Button
+              onClick={handleSubmitanswer}
+              disabled={!newanswer.trim() || isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isSubmitting ? "Posting..." : "Post Your Answer"}
+            </Button>
+            <p className="text-sm text-gray-600">
+              By posting your answer, you agree to the{" "}
+              <Link href="#" className="text-blue-600 hover:underline">
+                privacy policy
+              </Link>{" "}
+              and{" "}
+              <Link href="#" className="text-blue-600 hover:underline">
+                terms of service
+              </Link>
+              .
+            </p>
           </div>
         </CardContent>
       </Card>
