@@ -10,6 +10,10 @@ dist/
 build/
 **/build/
 
+# clone reference folders (not for pushing)
+stack-clone/
+server-clone/
+
 # logs and env
 *.log
 .env*
