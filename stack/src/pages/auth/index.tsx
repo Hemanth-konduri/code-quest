@@ -37,7 +37,7 @@ const index = () => {
   const handleGoogleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (clientId) {
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.origin + '/auth')}&response_type=code&scope=email%20profile`;
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/callback/google')}&response_type=code&scope=email%20profile`;
     } else {
       toast.info("Google OAuth credentials saved in backend server/.env");
     }
