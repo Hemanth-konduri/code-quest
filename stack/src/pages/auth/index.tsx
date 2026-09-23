@@ -34,6 +34,24 @@ const index = () => {
       console.log(error);
     }
   };
+  const handleGoogleLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (clientId) {
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(window.location.origin + '/auth')}&response_type=code&scope=email%20profile`;
+    } else {
+      toast.info("Google OAuth credentials saved in backend server/.env");
+    }
+  };
+
+  const handleGithubLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID || "Iv23lifltm47SYN9FVi0";
+    if (clientId) {
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`;
+    } else {
+      toast.info("GitHub OAuth credentials saved in backend server/.env");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -61,6 +79,8 @@ const index = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button
+                type="button"
+                onClick={handleGoogleLogin}
                 variant="outline"
                 className="w-full bg-transparent text-sm"
               >
@@ -85,6 +105,8 @@ const index = () => {
                 Log in with Google
               </Button>
               <Button
+                type="button"
+                onClick={handleGithubLogin}
                 variant="outline"
                 className="w-full bg-transparent text-sm"
               >
