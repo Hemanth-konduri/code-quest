@@ -22,10 +22,10 @@ app.use("/question", questionroute);
 app.use("/answer", answerroutes);
 
 const PORT = process.env.PORT || 5000;
-const databaseurl = process.env.MONGODB_URL;
+const databaseurl = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017/stack-overflow";
 
 mongoose
-  .connect(databaseurl, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(databaseurl)
   .then(() => {
     console.log("✅ Connected to MongoDB");
     app.listen(PORT, () => {
