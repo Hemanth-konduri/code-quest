@@ -125,15 +125,17 @@ const index = () => {
 
               {isOwnProfile && (
                 <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2 bg-transparent"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Profile
-                    </Button>
-                  </DialogTrigger>
+                  <DialogTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2 bg-transparent"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit Profile
+                      </Button>
+                    }
+                  />
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white text-gray-900">
                     <DialogHeader>
                       <DialogTitle>Edit Profile</DialogTitle>
