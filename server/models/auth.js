@@ -7,6 +7,11 @@ const userschema = mongoose.Schema({
   about: { type: String },
   tags: { type: [String] },
   joinDate: { type: Date, default: Date.now },
+  role: { type: String, enum: ["user", "admin"], default: "user" },
+  currentPlan: { type: String, default: "free" },
+  planBadge: { type: String, default: "Free" },
+  subscriptionExpiry: { type: Date },
+  bookmarks: [{ type: String }],
 });
 
-export default mongoose.model("user", userschema);
+export default mongoose.models.user || mongoose.model("user", userschema);
