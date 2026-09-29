@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
 import question from "../models/question.js";
+import User from "../models/auth.js";
+import { incrementDailyQuestionCount } from "../middleware/checkDailyLimit.js";
 
 export const Askquestion = async (req, res) => {
   const { postquestiondata } = req.body;
   const postques = new question({ ...postquestiondata });
   try {
     await postques.save();
+    if (req.userid) {
+      await incrementDailyQuestionCount(req.userid);
+    }
     res.status(200).json({ data: postques });
   } catch (error) {
     console.log(error);
@@ -16,8 +21,26 @@ export const Askquestion = async (req, res) => {
 
 export const getallquestion = async (req, res) => {
   try {
-    const allquestion = await question.find().sort({ askedon: -1 });
-    res.status(200).json({ data: allquestion });
+    const allquestion = await question.find().sort({ askedon: -1 }).lean();
+    
+    // Enrich with user plan badges
+    const userIds = [...new Set(allquestion.map((q) => q.userid).filter(Boolean))];
+    const users = await User.find({ _id: { $in: userIds } }).select("planBadge currentPlan");
+    const userBadgeMap = {};
+    users.forEach((u) => {
+      userBadgeMap[u._id.toString()] = {
+        badge: u.planBadge || "Free",
+        plan: u.currentPlan || "free",
+      };
+    });
+
+    const enrichedQuestions = allquestion.map((q) => ({
+      ...q,
+      userBadge: q.userid && userBadgeMap[q.userid] ? userBadgeMap[q.userid].badge : "Free",
+      userPlan: q.userid && userBadgeMap[q.userid] ? userBadgeMap[q.userid].plan : "free",
+    }));
+
+    res.status(200).json({ data: enrichedQuestions });
   } catch (error) {
     res.status(500).json("something went wrong..");
     return;
