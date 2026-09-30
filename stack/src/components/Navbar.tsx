@@ -1,4 +1,5 @@
 import { useAuth } from "@/lib/AuthContext";
+import { MembershipBadge } from "@/components/MembershipBadge";
 import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,16 +28,30 @@ const Navbar = ({ handleslidein }: any) => {
             <img src="/logo.png" alt="Logo" className="h-6 w-auto" />
           </Link>
 
-          <div className="hidden sm:flex gap-1">
-            {["About", "Products", "For Teams"].map((item) => (
+          <div className="hidden sm:flex gap-1 items-center">
+            {["About", "Products"].map((item) => (
               <Link
                 key={item}
                 href="/"
-                className="text-sm text-[#454545] font-medium px-4 py-2 rounded hover:bg-gray-200 transition"
+                className="text-sm text-[#454545] font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition"
               >
                 {item}
               </Link>
             ))}
+            <Link
+              href="/membership"
+              className="text-sm text-orange-600 font-bold px-3 py-1.5 rounded hover:bg-orange-50 border border-orange-200 transition flex items-center gap-1"
+            >
+              <span>Plans & Pricing</span>
+            </Link>
+            {user?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition"
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
           <form className="hidden lg:block flex-grow relative px-3">
             <input
@@ -58,8 +73,15 @@ const Navbar = ({ handleslidein }: any) => {
           ) : (
             <>
               <Link
+                href={`/membership`}
+                className="hidden md:flex items-center gap-1"
+              >
+                <MembershipBadge badge={user.planBadge || user.currentPlan || "Free"} />
+              </Link>
+
+              <Link
                 href={`/users/${user._id}`}
-                className="flex items-center justify-center bg-orange-600 text-white text-sm font-semibold w-9 h-9 rounded-full"
+                className="flex items-center justify-center bg-orange-600 text-white text-sm font-semibold w-9 h-9 rounded-full hover:opacity-90 transition"
               >
                 {user.name?.charAt(0).toUpperCase()}
               </Link>

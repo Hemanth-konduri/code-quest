@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Textarea } from "./ui/textarea";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
+import { MembershipBadge } from "./MembershipBadge";
 const questionData = {
   id: 3,
   title: "How can i block user with middleware?",
@@ -427,8 +428,11 @@ const QuestionDetail = ({ questionId }: any) => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="text-blue-600 hover:text-blue-800 font-medium">
-                        {question.author.name}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-blue-600 hover:text-blue-800 font-medium">
+                          {question.author.name}
+                        </span>
+                        <MembershipBadge badge={question.userBadge || question.author.badge || "Free"} />
                       </div>
                     </div>
                   </Link>
