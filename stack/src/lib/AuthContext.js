@@ -58,9 +58,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     toast.info("Logged out");
   };
+
+  const updateUser = (updatedFields) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      const newUser = { ...prevUser, ...updatedFields };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(newUser));
+      }
+      return newUser;
+    });
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, Signup, Login, Logout, loading, error }}
+      value={{ user, Signup, Login, Logout, updateUser, loading, error }}
     >
       {children}
     </AuthContext.Provider>

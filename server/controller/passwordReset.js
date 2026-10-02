@@ -66,10 +66,9 @@ export const requestPasswordReset = async (req, res) => {
       : await User.findOne({ phone: cleanIdentifier });
 
     if (!user) {
-      // Security: Return generic success response to prevent account enumeration
-      return res.status(200).json({
-        success: true,
-        message: "If an account exists with this contact information, a verification code has been sent.",
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email address or phone number. Please sign up first.",
       });
     }
 
@@ -191,6 +190,16 @@ export const resetPassword = async (req, res) => {
 
     if (newPassword.length < 8) {
       return res.status(400).json({ success: false, message: "Password must be at least 8 characters long" });
+    }
+
+    const hasUpper = /[A-Z]/.test(newPassword);
+    const hasLower = /[a-z]/.test(newPassword);
+
+    if (!hasUpper || !hasLower) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one uppercase letter (A-Z) and one lowercase letter (a-z).",
+      });
     }
 
     const resetRecord = await PasswordReset.findOne({ token, isVerified: true });
