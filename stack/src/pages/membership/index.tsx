@@ -32,7 +32,7 @@ interface Plan {
 }
 
 export default function MembershipPage() {
-  const { user, Logout } = useAuth();
+  const { user, Logout, updateUser } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -84,6 +84,15 @@ export default function MembershipPage() {
       setPlans(plansRes.data.data || []);
       setSubData(currentSubRes.data.data);
       setInvoices(invoicesRes.data.data?.invoices || []);
+
+      // Sync AuthContext user badge & plan in real time
+      const subUser = (currentSubRes.data as any)?.data?.user;
+      if (subUser && updateUser) {
+        updateUser({
+          currentPlan: subUser.currentPlan || "free",
+          planBadge: subUser.planBadge || "Free",
+        });
+      }
     } catch (error) {
       console.error("Error loading subscription data:", error);
     } finally {
@@ -95,7 +104,7 @@ export default function MembershipPage() {
     if (hasMounted) {
       fetchSubscriptionData();
     }
-  }, [user, hasMounted]);
+  }, [user?.email, hasMounted]);
 
   const handleSubscribe = async (plan: Plan) => {
     if (!user) {
@@ -156,6 +165,13 @@ export default function MembershipPage() {
             );
 
             if (verifyRes.data.success) {
+              const resUser = verifyRes.data.data?.user;
+              if (resUser && updateUser) {
+                updateUser({
+                  currentPlan: resUser.currentPlan,
+                  planBadge: resUser.planBadge,
+                });
+              }
               toast.success(
                 verifyRes.data.message || `Subscribed to ${plan.name}!`
               );
@@ -219,6 +235,13 @@ export default function MembershipPage() {
       );
 
       if (verifyRes.data.success) {
+        const resUser = verifyRes.data.data?.user;
+        if (resUser && updateUser) {
+          updateUser({
+            currentPlan: resUser.currentPlan,
+            planBadge: resUser.planBadge,
+          });
+        }
         toast.success(
           verifyRes.data.message || `Subscribed to ${demoPlan.name}!`
         );
