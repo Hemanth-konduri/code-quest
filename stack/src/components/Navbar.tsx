@@ -1,20 +1,33 @@
 import { useAuth } from "@/lib/AuthContext";
 import { MembershipBadge } from "@/components/MembershipBadge";
-import { Menu, Search } from "lucide-react";
+import { Menu, Search, Bell, Users, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import NotificationsDrawer from "./community/NotificationsDrawer";
+import axiosInstance from "@/lib/axiosinstance";
 
 const Navbar = ({ handleslidein }: any) => {
   const { user, Logout } = useAuth();
   const [hasMounted, setHasMounted] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   useEffect(() => {
     setHasMounted(true);
-  }, []);
+    if (user) {
+      axiosInstance
+        .get("/community/notifications/unread-count")
+        .then((res) => setUnreadCount(res.data.unreadCount || 0))
+        .catch(() => {});
+    }
+  }, [user]);
+
   const handlelogout = () => {
     Logout();
   };
+
   return (
-    <div className=" top-0 z-50 w-full min-h-[53px] bg-white border-t-[3px] border-[#ef8236] shadow-[0_1px_5px_#00000033] flex items-center justify-center">
+    <div className="relative top-0 z-50 w-full min-h-[53px] bg-white border-t-[3px] border-[#ef8236] shadow-[0_1px_5px_#00000033] flex items-center justify-center">
       <div className="w-[90%] max-w-[1440px] flex items-center justify-between mx-auto py-1">
         <button
           aria-label="Toggle sidebar"
@@ -29,40 +42,43 @@ const Navbar = ({ handleslidein }: any) => {
           </Link>
 
           <div className="hidden sm:flex gap-1 items-center">
-            {["About", "Products"].map((item) => (
-              <Link
-                key={item}
-                href="/"
-                className="text-sm text-[#454545] font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition"
-              >
-                {item}
-              </Link>
-            ))}
+            <Link
+              href="/community"
+              className="text-sm text-orange-600 font-bold px-3 py-1.5 rounded hover:bg-orange-50 transition flex items-center gap-1.5"
+            >
+              <Users className="w-4 h-4" />
+              <span>Community</span>
+            </Link>
+
             <Link
               href="/membership"
               className="text-sm text-orange-600 font-bold px-3 py-1.5 rounded hover:bg-orange-50 border border-orange-200 transition flex items-center gap-1"
             >
               <span>Plans & Pricing</span>
             </Link>
+
             {user?.role === "admin" && (
               <Link
-                href="/admin"
-                className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition"
+                href="/admin/moderation"
+                className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition flex items-center gap-1"
               >
-                Admin Panel
+                <Shield className="w-4 h-4" />
+                <span>Moderation</span>
               </Link>
             )}
           </div>
+
           <form className="hidden lg:block flex-grow relative px-3">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search questions or #hashtags..."
               className="w-full max-w-[600px] pl-9 pr-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
             <Search className="absolute left-4 top-2.5 h-4 w-4 text-gray-600" />
           </form>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2 relative">
           {!hasMounted ? null : !user ? (
             <Link
               href="/auth"
@@ -72,10 +88,29 @@ const Navbar = ({ handleslidein }: any) => {
             </Link>
           ) : (
             <>
-              <Link
-                href={`/membership`}
-                className="hidden md:flex items-center gap-1"
-              >
+              {/* Notifications Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 rounded-full hover:bg-gray-100 text-gray-700 transition relative"
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-orange-600 text-white font-bold text-[10px] rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationsDrawer
+                  isOpen={showNotifications}
+                  onClose={() => setShowNotifications(false)}
+                  onReadCountChange={(cnt) => setUnreadCount(cnt)}
+                />
+              </div>
+
+              <Link href={`/membership`} className="hidden md:flex items-center gap-1">
                 <MembershipBadge badge={user.planBadge || user.currentPlan || "Free"} />
               </Link>
 
