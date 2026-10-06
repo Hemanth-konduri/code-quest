@@ -13,6 +13,11 @@ const userschema = mongoose.Schema({
   planBadge: { type: String, default: "Free" },
   subscriptionExpiry: { type: Date },
   bookmarks: [{ type: String }],
+  language: {
+    type: String,
+    enum: ["en", "es", "hi", "pt", "zh", "fr"],
+    default: "en",
+  },
 });
 
 export default mongoose.models.user || mongoose.model("user", userschema);

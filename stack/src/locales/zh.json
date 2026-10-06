@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "home": "首页",
+    "community": "社区",
+    "questions": "问题",
+    "aiAssist": "AI 助手",
+    "tags": "标签",
+    "users": "用户",
+    "plans": "计划与会员",
+    "saves": "收藏夹",
+    "challenges": "挑战",
+    "chat": "聊天",
+    "articles": "文章",
+    "companies": "公司",
+    "admin": "管理审核",
+    "login": "登录",
+    "logout": "退出登录"
+  },
+  "language": {
+    "title": "语言",
+    "en": "英语",
+    "es": "西班牙语",
+    "hi": "印地语",
+    "pt": "葡萄牙语",
+    "zh": "中文",
+    "fr": "法语",
+    "verifyTitle": "语言切换验证",
+    "verifyMessageEmail": "我们已向您的注册电子邮箱发送了验证码。",
+    "verifyMessageMobile": "我们已向您的注册手机号码发送了验证码。",
+    "enterOtp": "请输入 6 位数验证码",
+    "verifyBtn": "验证并切换",
+    "resendOtp": "重新发送验证码",
+    "resendCooldown": "{{seconds}}秒后可重新发送",
+    "cancel": "取消",
+    "success": "语言已成功切换！"
+  },
+  "community": {
+    "title": "社区动态",
+    "subtitle": "探索技术文章、代码展示和学习成就。",
+    "forYou": "推荐",
+    "following": "关注",
+    "trending": "热门",
+    "createPost": "发布动态",
+    "placeholder": "今天想分享什么技术知识或项目成就？",
+    "publish": "发布",
+    "publishing": "发布中...",
+    "codeSnippet": "代码片段",
+    "projectLink": "项目链接",
+    "emptyFeed": "您的社区正在等待您！",
+    "emptySub": "关注开发者或发布动态以开始互动。",
+    "loadMore": "加载更多动态"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "search": "搜索...",
+    "loading": "加载中...",
+    "error": "出现错误，请重试。"
+  }
+}

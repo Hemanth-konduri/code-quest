@@ -10,6 +10,10 @@ import {
   verifyOtp,
   resetPassword,
 } from "../controller/passwordReset.js";
+import {
+  requestLanguageOtp,
+  verifyLanguageOtp,
+} from "../controller/language.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
@@ -23,5 +27,9 @@ router.patch("/update/:id", auth, updateprofile);
 router.post("/forgot-password", requestPasswordReset);
 router.post("/verify-otp", verifyOtp);
 router.post("/reset-password", resetPassword);
+
+// Language Switch Verification Routes
+router.post("/request-language-otp", auth, requestLanguageOtp);
+router.post("/verify-language-otp", auth, verifyLanguageOtp);
 
 export default router;

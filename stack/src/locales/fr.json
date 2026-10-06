@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "community": "Communauté",
+    "questions": "Questions",
+    "aiAssist": "Assistant IA",
+    "tags": "Tags",
+    "users": "Utilisateurs",
+    "plans": "Plans & Abonnements",
+    "saves": "Favoris & Sauvegardes",
+    "challenges": "Défis",
+    "chat": "Chat",
+    "articles": "Articles",
+    "companies": "Entreprises",
+    "admin": "Modération",
+    "login": "Se connecter",
+    "logout": "Se déconnecter"
+  },
+  "language": {
+    "title": "Langue",
+    "en": "Anglais",
+    "es": "Espagnol",
+    "hi": "Hindi",
+    "pt": "Portugais",
+    "zh": "Chinois",
+    "fr": "Français",
+    "verifyTitle": "Vérification de Changement de Langue",
+    "verifyMessageEmail": "Nous avons envoyé un code de vérification à votre adresse e-mail enregistrée.",
+    "verifyMessageMobile": "Nous avons envoyé un code de vérification à votre numéro de téléphone mobile enregistré.",
+    "enterOtp": "Entrez le code OTP à 6 chiffres",
+    "verifyBtn": "Vérifier & Changer",
+    "resendOtp": "Renvoyer l'OTP",
+    "resendCooldown": "Renvoyer dans {{seconds}}s",
+    "cancel": "Annuler",
+    "success": "Langue modifiée avec succès vers {{lang}} !"
+  },
+  "community": {
+    "title": "Flux Communautaire",
+    "subtitle": "Découvrez des articles techniques, des projets et des réalisations.",
+    "forYou": "Pour vous",
+    "following": "Abonnements",
+    "trending": "Tendances",
+    "createPost": "Créer une publication",
+    "placeholder": "Quelles connaissances techniques souhaitez-vous partager aujourd'hui ?",
+    "publish": "Publier",
+    "publishing": "Publication en cours...",
+    "codeSnippet": "Extrait de Code",
+    "projectLink": "Lien du Projet",
+    "emptyFeed": "Votre communauté vous attend !",
+    "emptySub": "Suivez des développeurs ou publiez pour commencer.",
+    "loadMore": "Charger plus"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher...",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite. Veuillez réessayer."
+  }
+}

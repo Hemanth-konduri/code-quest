@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "community": "Comunidad",
+    "questions": "Preguntas",
+    "aiAssist": "Asistente IA",
+    "tags": "Etiquetas",
+    "users": "Usuarios",
+    "plans": "Planes y Membresía",
+    "saves": "Guardados y Marcadores",
+    "challenges": "Desafíos",
+    "chat": "Chat",
+    "articles": "Artículos",
+    "companies": "Empresas",
+    "admin": "Moderación",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión"
+  },
+  "language": {
+    "title": "Idioma",
+    "en": "Inglés",
+    "es": "Español",
+    "hi": "Hindi",
+    "pt": "Portugués",
+    "zh": "Chino",
+    "fr": "Francés",
+    "verifyTitle": "Verificación de Cambio de Idioma",
+    "verifyMessageEmail": "Hemos enviado un código de verificación a su dirección de correo electrónico registrada.",
+    "verifyMessageMobile": "Hemos enviado un código de verificación a su número de teléfono móvil registrado.",
+    "enterOtp": "Ingrese el OTP de 6 dígitos",
+    "verifyBtn": "Verificar y Cambiar",
+    "resendOtp": "Reenviar OTP",
+    "resendCooldown": "Reenviar en {{seconds}}s",
+    "cancel": "Cancelar",
+    "success": "¡Idioma cambiado con éxito a {{lang}}!"
+  },
+  "community": {
+    "title": "Feed de la Comunidad",
+    "subtitle": "Descubra publicaciones técnicas, proyectos y logros de aprendizaje.",
+    "forYou": "Para ti",
+    "following": "Siguiendo",
+    "trending": "Tendencias",
+    "createPost": "Crear una publicación",
+    "placeholder": "¿Qué conocimiento técnico o proyecto compartes hoy?",
+    "publish": "Publicar",
+    "publishing": "Publicando...",
+    "codeSnippet": "Fragmento de Código",
+    "projectLink": "Enlace del Proyecto",
+    "emptyFeed": "¡Tu comunidad te espera!",
+    "emptySub": "Sigue desarrolladores o publica para comenzar.",
+    "loadMore": "Cargar más publicaciones"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "search": "Buscar...",
+    "loading": "Cargando...",
+    "error": "Algo salió mal. Por favor intente de nuevo."
+  }
+}

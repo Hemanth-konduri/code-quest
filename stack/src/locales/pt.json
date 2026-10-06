@@ -1,0 +1,62 @@
+{
+  "nav": {
+    "home": "Início",
+    "community": "Comunidade",
+    "questions": "Perguntas",
+    "aiAssist": "Assistente IA",
+    "tags": "Tags",
+    "users": "Usuários",
+    "plans": "Planos e Assinatura",
+    "saves": "Salvos e Favoritos",
+    "challenges": "Desafios",
+    "chat": "Chat",
+    "articles": "Artigos",
+    "companies": "Empresas",
+    "admin": "Moderação",
+    "login": "Entrar",
+    "logout": "Sair"
+  },
+  "language": {
+    "title": "Idioma",
+    "en": "Inglês",
+    "es": "Espanhol",
+    "hi": "Hindi",
+    "pt": "Português",
+    "zh": "Chinês",
+    "fr": "Francês",
+    "verifyTitle": "Verificação de Mudança de Idioma",
+    "verifyMessageEmail": "Enviamos um código de verificação para o seu e-mail cadastrado.",
+    "verifyMessageMobile": "Enviamos um código de verificação para o seu celular cadastrado.",
+    "enterOtp": "Digite o OTP de 6 dígitos",
+    "verifyBtn": "Verificar e Alterar",
+    "resendOtp": "Reenviar OTP",
+    "resendCooldown": "Reenviar em {{seconds}}s",
+    "cancel": "Cancelar",
+    "success": "Idioma alterado com sucesso!"
+  },
+  "community": {
+    "title": "Feed da Comunidade",
+    "subtitle": "Descubra postagens técnicas, projetos e conquistas.",
+    "forYou": "Para Você",
+    "following": "Seguindo",
+    "trending": "Em Alta",
+    "createPost": "Criar uma Publicação",
+    "placeholder": "Qual conhecimento técnico você gostaria de compartilhar hoje?",
+    "publish": "Publicar",
+    "publishing": "Publicando...",
+    "codeSnippet": "Trecho de Código",
+    "projectLink": "Link do Projeto",
+    "emptyFeed": "Sua comunidade está esperando!",
+    "emptySub": "Siga desenvolvedores ou crie uma publicação.",
+    "loadMore": "Carregar mais"
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar...",
+    "loading": "Carregando...",
+    "error": "Algo deu errado. Tente novamente."
+  }
+}
