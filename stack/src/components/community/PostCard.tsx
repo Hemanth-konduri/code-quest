@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { toast } from "react-toastify";
@@ -51,6 +51,7 @@ interface PostCardProps {
 
 export default function PostCard({ post, onPostUpdated, onPostDeleted }: PostCardProps) {
   const { user } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [likesCount, setLikesCount] = useState(post.likesCount || 0);
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false);
@@ -62,8 +63,12 @@ export default function PostCard({ post, onPostUpdated, onPostDeleted }: PostCar
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
 
-  const isOwner = user && user._id === post.userid._id;
-  const isAdmin = user && user.role === "admin";
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const isOwner = hasMounted && user && user._id === post.userid._id;
+  const isAdmin = hasMounted && user && user.role === "admin";
 
   // Format hashtags and mentions in post content
   const renderFormattedContent = (text: string) => {
@@ -100,7 +105,6 @@ export default function PostCard({ post, onPostUpdated, onPostDeleted }: PostCar
     const previousState = isLiked;
     const previousCount = likesCount;
 
-    // Optimistic UI update
     setIsLiked(!previousState);
     setLikesCount(previousState ? previousCount - 1 : previousCount + 1);
 
@@ -109,7 +113,6 @@ export default function PostCard({ post, onPostUpdated, onPostDeleted }: PostCar
       setIsLiked(res.data.liked);
       setLikesCount(res.data.likesCount);
     } catch (error) {
-      // Rollback on error
       setIsLiked(previousState);
       setLikesCount(previousCount);
       toast.error("Failed to update like.");
@@ -185,12 +188,14 @@ export default function PostCard({ post, onPostUpdated, onPostDeleted }: PostCar
               <MembershipBadge badge={post.userid.planBadge || post.userid.currentPlan || "Free"} />
             </div>
             <span className="text-xs text-gray-400">
-              {new Date(post.createdAt).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {hasMounted
+                ? new Date(post.createdAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : ""}
             </span>
           </div>
         </div>

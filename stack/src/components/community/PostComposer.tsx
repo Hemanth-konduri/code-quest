@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/axiosinstance";
 import { toast } from "react-toastify";
@@ -10,6 +10,7 @@ interface PostComposerProps {
 
 export default function PostComposer({ onPostCreated }: PostComposerProps) {
   const { user } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
   const [content, setContent] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [currentMediaInput, setCurrentMediaInput] = useState("");
@@ -21,7 +22,11 @@ export default function PostComposer({ onPostCreated }: PostComposerProps) {
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!user) return null;
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted || !user) return null;
 
   const handleAddMedia = () => {
     if (!currentMediaInput.trim()) return;
