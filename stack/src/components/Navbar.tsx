@@ -4,6 +4,7 @@ import { Menu, Search, Bell, Users, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import NotificationsDrawer from "./community/NotificationsDrawer";
+import LanguageSelector from "./LanguageSelector";
 import axiosInstance from "@/lib/axiosinstance";
 
 const Navbar = ({ handleslidein }: any) => {
@@ -79,6 +80,9 @@ const Navbar = ({ handleslidein }: any) => {
         </div>
 
         <div className="flex items-center gap-2 relative">
+          {/* Language Selector */}
+          <LanguageSelector />
+
           {!hasMounted ? null : !user ? (
             <Link
               href="/auth"
