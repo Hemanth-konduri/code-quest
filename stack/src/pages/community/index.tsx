@@ -6,9 +6,11 @@ import PostCard, { PostData } from "@/components/community/PostCard";
 import TrendingSidebar from "@/components/community/TrendingSidebar";
 import { Sparkles, Users, Flame, Hash, Search, AlertCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/router";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function CommunityFeedPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { tab: queryTab, tag: queryTag } = router.query;
 
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "trending" | "hashtag">("for-you");
@@ -54,7 +56,6 @@ export default function CommunityFeedPage() {
 
         let fetchedPosts: PostData[] = res.data.posts || [];
 
-        // Frontend search query filter if typed
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           fetchedPosts = fetchedPosts.filter(
@@ -75,13 +76,13 @@ export default function CommunityFeedPage() {
         setHasNextPage(res.data.hasNextPage);
       } catch (err: any) {
         console.error("Error fetching feed:", err);
-        setError("Something went wrong while loading the feed. Please try again.");
+        setError(t("common.error"));
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [activeTab, activeTag, searchQuery]
+    [activeTab, activeTag, searchQuery, t]
   );
 
   useEffect(() => {
@@ -101,17 +102,15 @@ export default function CommunityFeedPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
-                <h1 className="text-xl font-black text-gray-900 tracking-tight">Community Feed</h1>
-                <p className="text-xs text-gray-500">
-                  Discover technical posts, code showcases, and learning achievements.
-                </p>
+                <h1 className="text-xl font-black text-gray-900 tracking-tight">{t("community.title")}</h1>
+                <p className="text-xs text-gray-500">{t("community.subtitle")}</p>
               </div>
 
               {/* Feed Search Input */}
               <div className="relative w-full sm:w-64">
                 <input
                   type="text"
-                  placeholder="Search feed or #hashtag..."
+                  placeholder={t("common.search")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full text-xs pl-8 pr-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-400"
@@ -134,7 +133,7 @@ export default function CommunityFeedPage() {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                For You
+                {t("community.forYou")}
               </button>
 
               <button
@@ -149,7 +148,7 @@ export default function CommunityFeedPage() {
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                Following
+                {t("community.following")}
               </button>
 
               <button
@@ -164,7 +163,7 @@ export default function CommunityFeedPage() {
                 }`}
               >
                 <Flame className="w-3.5 h-3.5" />
-                Trending
+                {t("community.trending")}
               </button>
 
               {activeTab === "hashtag" && (
@@ -217,9 +216,9 @@ export default function CommunityFeedPage() {
               <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
                 🌟
               </div>
-              <h3 className="text-base font-bold text-gray-900">Your community is waiting!</h3>
+              <h3 className="text-base font-bold text-gray-900">{t("community.emptyFeed")}</h3>
               <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                Follow developers, write a post, or explore trending technical achievements to start populating your feed.
+                {t("community.emptySub")}
               </p>
             </div>
           ) : (
@@ -242,7 +241,7 @@ export default function CommunityFeedPage() {
                     disabled={loadingMore}
                     className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold text-xs rounded-full shadow-sm transition disabled:opacity-50"
                   >
-                    {loadingMore ? "Loading more posts..." : "Load More Posts"}
+                    {loadingMore ? t("common.loading") : t("community.loadMore")}
                   </button>
                 </div>
               )}
