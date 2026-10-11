@@ -10,6 +10,7 @@ import TrustedDevice from "../models/trustedDevice.js";
 import SecurityEvent from "../models/securityEvent.js";
 import LanguageOtp from "../models/languageOtp.js";
 import { parseUserAgent, getClientIp, hashToken } from "../utils/deviceParser.js";
+import { sendNewDeviceLoginAlert } from "../services/securityEmailService.js";
 
 // Helper: Mask email
 const maskEmail = (email = "") => {
@@ -340,6 +341,18 @@ export const verifyLoginOtp = async (req, res) => {
       deviceType,
       loginResult: "success",
       recognitionStatus: "unrecognized",
+    });
+
+    // Send New Device Login Security Alert Email
+    await sendNewDeviceLoginAlert({
+      email: exisitinguser.email,
+      userName: exisitinguser.name,
+      deviceName,
+      browser,
+      os,
+      ip,
+      location: "Local Network",
+      loginDate: new Date(),
     });
 
     res.status(200).json({

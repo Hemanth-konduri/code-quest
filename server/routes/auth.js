@@ -22,6 +22,12 @@ import {
   getTrustedDevices,
   removeTrustedDevice,
 } from "../controller/session.js";
+import {
+  getAdminLoginActivity,
+  getAdminUserSessions,
+  adminRevokeSession,
+  getAdminSecurityEvents,
+} from "../controller/adminSecurity.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
@@ -41,11 +47,17 @@ router.post("/reset-password", resetPassword);
 router.post("/request-language-otp", auth, requestLanguageOtp);
 router.post("/verify-language-otp", auth, verifyLanguageOtp);
 
-// Active Sessions & Security Routes
+// Active Sessions & User Security Routes
 router.get("/sessions", auth, getUserSessions);
 router.delete("/sessions/:id", auth, revokeSession);
 router.delete("/sessions", auth, revokeAllOtherSessions);
 router.get("/trusted-devices", auth, getTrustedDevices);
 router.delete("/trusted-devices/:id", auth, removeTrustedDevice);
+
+// Admin Security Monitoring Routes
+router.get("/admin/security/login-activity", auth, getAdminLoginActivity);
+router.get("/admin/security/sessions", auth, getAdminUserSessions);
+router.delete("/admin/security/sessions/:id", auth, adminRevokeSession);
+router.get("/admin/security/events", auth, getAdminSecurityEvents);
 
 export default router;

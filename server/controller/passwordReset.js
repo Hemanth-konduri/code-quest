@@ -2,6 +2,8 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import User from "../models/auth.js";
 import PasswordReset from "../models/passwordReset.js";
+import UserSession from "../models/userSession.js";
+import SecurityEvent from "../models/securityEvent.js";
 import { sendSmsOtp } from "../services/smsService.js";
 import nodemailer from "nodemailer";
 
@@ -214,6 +216,18 @@ export const resetPassword = async (req, res) => {
     // Secure Password Hashing
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     await User.findByIdAndUpdate(resetRecord.userid, { password: hashedPassword });
+
+    // Invalidate all existing sessions on password change
+    await UserSession.updateMany(
+      { userid: resetRecord.userid, status: "active" },
+      { $set: { status: "revoked", revokedAt: new Date() } }
+    );
+
+    await SecurityEvent.create({
+      userid: resetRecord.userid,
+      eventType: "password_changed",
+      details: "Password reset completed. All existing sessions invalidated.",
+    });
 
     // Invalidate reset session
     resetRecord.resetCompletedAt = new Date();
