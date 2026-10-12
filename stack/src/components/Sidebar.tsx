@@ -11,6 +11,7 @@ import {
   Trophy,
   Users,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -115,6 +116,15 @@ const Sidebar = ({ isopen }: any) => {
               >
                 <Bookmark className="w-4 h-4 mr-2 lg:mr-3" />
                 {t("nav.saves")}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/users/security"
+                className="flex items-center px-2 py-2 text-gray-700 hover:bg-gray-100 rounded text-sm"
+              >
+                <ShieldCheck className="w-4 h-4 mr-2 lg:mr-3 text-orange-600" />
+                Security & Devices
               </Link>
             </li>
             <li>

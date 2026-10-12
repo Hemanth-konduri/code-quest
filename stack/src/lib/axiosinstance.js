@@ -15,6 +15,10 @@ axiosInstance.interceptors.request.use((req) => {
         req.headers.Authorization = `Bearer ${token}`;
       }
     }
+    const trustedToken = localStorage.getItem("trusted_device_token");
+    if (trustedToken) {
+      req.headers["x-trusted-device-token"] = trustedToken;
+    }
   }
   return req;
 });
