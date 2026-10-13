@@ -2,9 +2,13 @@ import mongoose from "mongoose";
 import UserReputation from "../models/userReputation.js";
 import ReputationTransaction from "../models/reputationTransaction.js";
 import ReputationAuditLog from "../models/reputationAuditLog.js";
+import ReputationTransfer from "../models/reputationTransfer.js";
 import Notification from "../models/notification.js";
+import User from "../models/auth.js";
 import {
   REPUTATION_RULES,
+  PRIVILEGES,
+  TRANSFER_LIMITS,
   getUnlockedPrivileges,
   getNextPrivilege,
   getReputationBadge,
@@ -83,7 +87,7 @@ export const recordReputationChange = async ({
   // 3. Create authoritative ledger record
   let transaction;
   try {
-    transaction = await ReputationTransaction.create({
+    const txData = {
       userId: parsedUserId,
       activityType,
       pointsChange,
@@ -91,11 +95,14 @@ export const recordReputationChange = async ({
       newBalance,
       relatedEntityId: relatedEntityId ? String(relatedEntityId) : null,
       relatedEntityType,
-      uniqueEventId,
       description: description || `Reputation changed by ${pointsChange} points`,
       isPublic,
       metadata,
-    });
+    };
+    if (uniqueEventId) {
+      txData.uniqueEventId = uniqueEventId;
+    }
+    transaction = await ReputationTransaction.create(txData);
   } catch (err) {
     // If unique key collision occurred concurrently
     if (err.code === 11000 && uniqueEventId) {
@@ -394,10 +401,438 @@ export const reconcileUserReputation = async (userId) => {
     { new: true, upsert: true }
   );
 
-  return {
+    return {
     reconciled: true,
     previousPoints: userRep.points,
     currentPoints: nonNegativePoints,
     totalTransactions: transactions.length,
   };
+};
+
+/**
+ * Transfer reputation points from sender to recipient
+ */
+export const transferReputation = async ({
+  senderId,
+  recipientId,
+  points,
+  reason,
+  idempotencyKey = null,
+}) => {
+  if (!senderId || !recipientId) {
+    return { success: false, message: "Sender and recipient are required" };
+  }
+
+  const parsedSenderId = new mongoose.Types.ObjectId(String(senderId));
+  const parsedRecipientId = new mongoose.Types.ObjectId(String(recipientId));
+
+  if (parsedSenderId.equals(parsedRecipientId)) {
+    return { success: false, message: "You cannot transfer reputation points to yourself" };
+  }
+
+  const transferAmount = parseInt(points, 10);
+  if (isNaN(transferAmount) || transferAmount < 1 || transferAmount > 50) {
+    return {
+      success: false,
+      message: "Transfer amount must be an integer between 1 and 50 points",
+    };
+  }
+
+  if (!reason || !reason.trim()) {
+    return { success: false, message: "A valid transfer reason must be provided" };
+  }
+
+  // Idempotency check
+  if (idempotencyKey) {
+    const existingTransfer = await ReputationTransfer.findOne({ idempotencyKey });
+    if (existingTransfer) {
+      return {
+        success: true,
+        duplicate: true,
+        message: "Transfer already completed with this idempotency key",
+        transfer: existingTransfer,
+      };
+    }
+  }
+
+  // Verify recipient exists
+  const recipientUser = await User.findById(parsedRecipientId).select("name email role");
+  if (!recipientUser) {
+    return { success: false, message: "Recipient user not found" };
+  }
+
+  const senderUser = await User.findById(parsedSenderId).select("name email role");
+  if (!senderUser) {
+    return { success: false, message: "Sender user not found" };
+  }
+
+  // Check sender balance & eligibility
+  const senderRep = await UserReputation.findOne({ userId: parsedSenderId });
+  const currentSenderPoints = senderRep?.points || 0;
+
+  // Sender must have strictly MORE than 50 points (> 50)
+  if (currentSenderPoints <= 50) {
+    return {
+      success: false,
+      message: "You must have more than 50 reputation points to transfer points to others.",
+      currentPoints: currentSenderPoints,
+      minRequired: 51,
+    };
+  }
+
+  if (currentSenderPoints < transferAmount) {
+    return {
+      success: false,
+      message: "Insufficient reputation balance for this transfer",
+      currentPoints: currentSenderPoints,
+    };
+  }
+
+  // Rolling 24-hour limit: max 100 points
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentTransfers = await ReputationTransfer.find({
+    senderId: parsedSenderId,
+    status: "completed",
+    createdAt: { $gte: since24h },
+  });
+
+  const transferredLast24h = recentTransfers.reduce((sum, tx) => sum + tx.points, 0);
+  if (transferredLast24h + transferAmount > 100) {
+    const remaining = Math.max(0, 100 - transferredLast24h);
+    return {
+      success: false,
+      message: `Transfer exceeds daily 100-point limit. You have transferred ${transferredLast24h} points in the past 24 hours (remaining: ${remaining}).`,
+      transferredLast24h,
+      remainingDailyLimit: remaining,
+    };
+  }
+
+  // Atomic deduction from sender (prevent concurrent double spending)
+  const updatedSenderRep = await UserReputation.findOneAndUpdate(
+    {
+      userId: parsedSenderId,
+      points: { $gte: transferAmount, $gt: 50 },
+    },
+    {
+      $inc: { points: -transferAmount, totalTransferred: transferAmount },
+    },
+    { new: true }
+  );
+
+  if (!updatedSenderRep) {
+    return {
+      success: false,
+      message: "Transfer failed: Insufficient balance or concurrent transfer detected",
+    };
+  }
+
+  // Atomic credit to recipient
+  let recipientRep = await UserReputation.findOneAndUpdate(
+    { userId: parsedRecipientId },
+    {
+      $inc: { points: transferAmount, totalReceived: transferAmount },
+    },
+    { new: true, upsert: true }
+  );
+
+  // Update privileges
+  updatedSenderRep.unlockedPrivileges = getUnlockedPrivileges(updatedSenderRep.points);
+  await updatedSenderRep.save();
+
+  const recipientPrevPrivileges = recipientRep.unlockedPrivileges || [];
+  recipientRep.unlockedPrivileges = getUnlockedPrivileges(recipientRep.points);
+  await recipientRep.save();
+
+  // Create transfer record
+  const transfer = await ReputationTransfer.create({
+    senderId: parsedSenderId,
+    recipientId: parsedRecipientId,
+    points: transferAmount,
+    reason: reason.trim(),
+    status: "completed",
+    idempotencyKey: idempotencyKey || null,
+  });
+
+  // Create sender ledger entry
+  const senderTx = await ReputationTransaction.create({
+    userId: parsedSenderId,
+    activityType: "reputation_transfer_sent",
+    pointsChange: -transferAmount,
+    previousBalance: currentSenderPoints,
+    newBalance: updatedSenderRep.points,
+    relatedEntityId: transfer._id.toString(),
+    relatedEntityType: "transfer",
+    description: `Transferred ${transferAmount} points to ${recipientUser.name || "user"}`,
+    isPublic: false,
+    metadata: { recipientId: parsedRecipientId, reason: reason.trim() },
+  });
+
+  // Create recipient ledger entry
+  const recipientTx = await ReputationTransaction.create({
+    userId: parsedRecipientId,
+    activityType: "reputation_transfer_received",
+    pointsChange: transferAmount,
+    previousBalance: recipientRep.points - transferAmount,
+    newBalance: recipientRep.points,
+    relatedEntityId: transfer._id.toString(),
+    relatedEntityType: "transfer",
+    description: `Received ${transferAmount} points from ${senderUser.name || "user"}`,
+    isPublic: false,
+    metadata: { senderId: parsedSenderId, reason: reason.trim() },
+  });
+
+  // Link transaction IDs
+  transfer.senderTransactionId = senderTx._id;
+  transfer.recipientTransactionId = recipientTx._id;
+  await transfer.save();
+
+  // In-app notifications
+  try {
+    // Recipient notification
+    await Notification.create({
+      recipientId: parsedRecipientId,
+      actorId: parsedSenderId,
+      type: "reputation_transfer_received",
+      pointsChange: transferAmount,
+      entityId: transfer._id.toString(),
+      message: `${senderUser.name || "A user"} transferred ${transferAmount} reputation points to you: "${reason.trim()}"`,
+      read: false,
+    });
+
+    // Sender notification
+    await Notification.create({
+      recipientId: parsedSenderId,
+      actorId: parsedRecipientId,
+      type: "reputation_transfer_sent",
+      pointsChange: -transferAmount,
+      entityId: transfer._id.toString(),
+      message: `You transferred ${transferAmount} reputation points to ${recipientUser.name || "user"}`,
+      read: false,
+    });
+
+    // Check if recipient unlocked new privilege
+    const newlyUnlockedRecipient = recipientRep.unlockedPrivileges.filter(
+      (p) => !recipientPrevPrivileges.includes(p)
+    );
+    for (const priv of newlyUnlockedRecipient) {
+      await Notification.create({
+        recipientId: parsedRecipientId,
+        actorId: null,
+        type: "privilege_unlocked",
+        pointsChange: 0,
+        privilege: priv,
+        message: `Congratulations! You unlocked the privilege: ${priv.replace("_", " ")}`,
+        read: false,
+      });
+    }
+  } catch (notifErr) {
+    console.error("Transfer notification error:", notifErr);
+  }
+
+  return {
+    success: true,
+    transfer,
+    newSenderBalance: updatedSenderRep.points,
+    newRecipientBalance: recipientRep.points,
+  };
+};
+
+/**
+ * Reverses a completed transfer by administrative order
+ */
+export const reverseReputationTransfer = async ({
+  transferId,
+  adminId,
+  reason,
+}) => {
+  if (!transferId || !adminId || !reason) {
+    return { success: false, message: "Transfer ID, admin ID, and reason are required" };
+  }
+
+  const transfer = await ReputationTransfer.findById(transferId);
+  if (!transfer) {
+    return { success: false, message: "Transfer not found" };
+  }
+
+  if (transfer.status !== "completed") {
+    return { success: false, message: `Cannot reverse transfer with status: ${transfer.status}` };
+  }
+
+  const { senderId, recipientId, points } = transfer;
+
+  // Fetch current balances
+  const recipientRep = await UserReputation.findOne({ userId: recipientId });
+  const senderRep = await UserReputation.findOne({ userId: senderId });
+
+  const recipientPrev = recipientRep?.points || 0;
+  const senderPrev = senderRep?.points || 0;
+
+  // Deduct from recipient (non-negative)
+  const recipientNew = Math.max(0, recipientPrev - points);
+  await UserReputation.updateOne(
+    { userId: recipientId },
+    {
+      $set: {
+        points: recipientNew,
+        unlockedPrivileges: getUnlockedPrivileges(recipientNew),
+      },
+      $inc: { totalReceived: -points },
+    }
+  );
+
+  // Refund to sender
+  const senderNew = senderPrev + points;
+  await UserReputation.updateOne(
+    { userId: senderId },
+    {
+      $set: {
+        points: senderNew,
+        unlockedPrivileges: getUnlockedPrivileges(senderNew),
+      },
+      $inc: { totalTransferred: -points },
+    }
+  );
+
+  // Compensating ledger entries
+  const recipientCompTx = await ReputationTransaction.create({
+    userId: recipientId,
+    activityType: "reputation_transfer_reversed",
+    pointsChange: -(recipientPrev - recipientNew),
+    previousBalance: recipientPrev,
+    newBalance: recipientNew,
+    relatedEntityId: transfer._id.toString(),
+    relatedEntityType: "transfer",
+    description: `Transfer of ${points} points reversed by admin: ${reason}`,
+    isPublic: false,
+    metadata: { transferId, adminId, reason },
+  });
+
+  const senderCompTx = await ReputationTransaction.create({
+    userId: senderId,
+    activityType: "reputation_transfer_reversed",
+    pointsChange: points,
+    previousBalance: senderPrev,
+    newBalance: senderNew,
+    relatedEntityId: transfer._id.toString(),
+    relatedEntityType: "transfer",
+    description: `Transfer of ${points} points refunded by admin: ${reason}`,
+    isPublic: false,
+    metadata: { transferId, adminId, reason },
+  });
+
+  // Mark transfer as reversed
+  transfer.status = "reversed";
+  transfer.reversalReason = reason;
+  transfer.reversedAt = new Date();
+  transfer.reversedBy = new mongoose.Types.ObjectId(String(adminId));
+  await transfer.save();
+
+  // Audit log
+  await ReputationAuditLog.create({
+    adminId: new mongoose.Types.ObjectId(String(adminId)),
+    targetUserId: recipientId,
+    action: "transfer_reversed",
+    pointsChange: -points,
+    reason,
+    transactionId: recipientCompTx._id,
+    metadata: { transferId, senderId, recipientId, points },
+  });
+
+  // In-app notifications
+  try {
+    await Notification.create({
+      recipientId,
+      actorId: adminId,
+      type: "reputation_deducted",
+      pointsChange: -points,
+      entityId: transfer._id.toString(),
+      message: `A received transfer of ${points} points was reversed by administrator: ${reason}`,
+      read: false,
+    });
+
+    await Notification.create({
+      recipientId: senderId,
+      actorId: adminId,
+      type: "reputation_earned",
+      pointsChange: points,
+      entityId: transfer._id.toString(),
+      message: `A transfer of ${points} points was refunded to your balance by administrator: ${reason}`,
+      read: false,
+    });
+  } catch (notifErr) {
+    console.error("Reversal notification error:", notifErr);
+  }
+
+  return {
+    success: true,
+    message: "Transfer successfully reversed",
+    transfer,
+  };
+};
+
+/**
+ * Get transfer eligibility and limits for a user
+ */
+export const getTransferEligibility = async (userId) => {
+  const parsedUserId = new mongoose.Types.ObjectId(String(userId));
+  const userRep = await UserReputation.findOne({ userId: parsedUserId });
+  const currentPoints = userRep?.points || 0;
+
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentTransfers = await ReputationTransfer.find({
+    senderId: parsedUserId,
+    status: "completed",
+    createdAt: { $gte: since24h },
+  });
+
+  const transferredLast24h = recentTransfers.reduce((sum, tx) => sum + tx.points, 0);
+  const remainingDailyLimit = Math.max(0, 100 - transferredLast24h);
+  const canTransfer = currentPoints > 50 && remainingDailyLimit > 0;
+
+  return {
+    canTransfer,
+    currentPoints,
+    minRequired: 51,
+    transferredLast24h,
+    remainingDailyLimit,
+    maxPerTx: 50,
+    dailyLimit: 100,
+  };
+};
+
+/**
+ * Admin manual reputation adjustment with mandatory reason
+ */
+export const adminManualReputationAdjustment = async ({
+  targetUserId,
+  pointsChange,
+  reason,
+  adminId,
+}) => {
+  if (!targetUserId || !pointsChange || !reason || !adminId) {
+    return { success: false, message: "Target user, points change, reason, and admin ID required" };
+  }
+
+  const result = await recordReputationChange({
+    userId: targetUserId,
+    activityType: "admin_adjustment",
+    pointsChange: Number(pointsChange),
+    description: `Administrative adjustment: ${reason}`,
+    actorId: adminId,
+    metadata: { adminId, reason },
+  });
+
+  if (result.success && result.transaction) {
+    await ReputationAuditLog.create({
+      adminId: new mongoose.Types.ObjectId(String(adminId)),
+      targetUserId: new mongoose.Types.ObjectId(String(targetUserId)),
+      action: "manual_adjustment",
+      pointsChange: Number(pointsChange),
+      reason,
+      transactionId: result.transaction._id,
+      metadata: { previousBalance: result.transaction.previousBalance, newBalance: result.transaction.newBalance },
+    });
+  }
+
+  return result;
 };

@@ -26,6 +26,8 @@ const reportSchema = new mongoose.Schema(
     },
     resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
     actionTaken: { type: String, default: null },
+    isEnhanced: { type: Boolean, default: false },
+    priority: { type: String, enum: ["normal", "high"], default: "normal" },
   },
   { timestamps: true }
 );

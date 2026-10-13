@@ -13,6 +13,8 @@ const questionschema = mongoose.Schema(
     askedon: { type: Date, default: Date.now },
     acceptedAnswerId: { type: String, default: null },
     hasAwarded10Upvotes: { type: Boolean, default: false },
+    closeVotes: { type: [String], default: [] },
+    isClosed: { type: Boolean, default: false },
     answer: [
       {
         answerbody: String,

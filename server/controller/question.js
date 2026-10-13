@@ -139,3 +139,50 @@ export const votequestion = async (req, res) => {
     res.status(500).json("something went wrong..");
   }
 };
+
+export const voteCloseQuestion = async (req, res) => {
+  const { id: _id } = req.params;
+  const voterId = req.userid;
+
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    return res.status(400).json({ message: "Invalid question ID" });
+  }
+
+  try {
+    const questionDoc = await question.findById(_id);
+    if (!questionDoc) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    if (questionDoc.isClosed) {
+      return res.status(400).json({ message: "Question is already closed" });
+    }
+
+    questionDoc.closeVotes = questionDoc.closeVotes || [];
+    const index = questionDoc.closeVotes.findIndex((id) => id === String(voterId));
+
+    if (index === -1) {
+      questionDoc.closeVotes.push(String(voterId));
+    } else {
+      questionDoc.closeVotes.splice(index, 1);
+    }
+
+    // Close question if threshold reached (3 votes)
+    if (questionDoc.closeVotes.length >= 3) {
+      questionDoc.isClosed = true;
+    }
+
+    await questionDoc.save();
+    res.status(200).json({
+      data: questionDoc,
+      message: questionDoc.isClosed
+        ? "Question reached close-vote threshold and has been closed"
+        : "Vote to close recorded successfully",
+      closeVotesCount: questionDoc.closeVotes.length,
+      isClosed: questionDoc.isClosed,
+    });
+  } catch (error) {
+    console.error("voteCloseQuestion error:", error);
+    res.status(500).json({ message: "Failed to record vote to close" });
+  }
+};

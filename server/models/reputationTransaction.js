@@ -53,9 +53,7 @@ const reputationTransactionSchema = new mongoose.Schema(
     },
     uniqueEventId: {
       type: String,
-      sparse: true,
-      unique: true,
-      index: true,
+      index: { unique: true, sparse: true },
     },
     description: {
       type: String,

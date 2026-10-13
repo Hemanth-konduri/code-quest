@@ -10,6 +10,8 @@ import UserSuspension from "../models/userSuspension.js";
 import Report from "../models/report.js";
 import User from "../models/auth.js";
 import { extractHashtags, extractMentions, calculateTrendingScore } from "../utils/tagParser.js";
+import { checkUserPrivilege } from "../middleware/privilege.js";
+import { deductAdminContentRemoval } from "../services/reputationService.js";
 
 // Helper: Check if user is suspended
 const checkSuspension = async (userid) => {
@@ -248,8 +250,18 @@ export const updatePost = async (req, res) => {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    if (post.userid.toString() !== userid.toString()) {
-      return res.status(403).json({ message: "Forbidden: You can only edit your own posts." });
+    const isOwner = post.userid.toString() === userid.toString();
+    if (!isOwner) {
+      const hasEditPrivilege = await checkUserPrivilege(userid, "edit_posts");
+      const adminUser = await User.findById(userid).select("role");
+      const isAdmin = adminUser && adminUser.role === "admin";
+      if (!hasEditPrivilege && !isAdmin) {
+        return res.status(403).json({
+          message: "Editing community posts requires at least 100 reputation points (Edit Community Posts privilege).",
+          privilege: "edit_posts",
+          requiredPoints: 100,
+        });
+      }
     }
 
     const { content, media, codeSnippet, projectLink } = req.body;
@@ -933,16 +945,25 @@ export const reportPost = async (req, res) => {
       return res.status(400).json({ message: "You have already reported this post." });
     }
 
+    const hasEnhancedReporting = await checkUserPrivilege(reporterId, "inappropriate_reporting");
+    const isPriority = req.body.priority === "high" || req.body.isEnhanced;
+
     const newReport = new Report({
       reporterId,
       postid: id,
       reason,
       details: details || "",
+      isEnhanced: hasEnhancedReporting && Boolean(isPriority),
+      priority: hasEnhancedReporting && Boolean(isPriority) ? "high" : "normal",
     });
 
     await newReport.save();
 
-    return res.status(201).json({ message: "Report submitted successfully. Thank you for keeping our community safe." });
+    return res.status(201).json({
+      message: "Report submitted successfully. Thank you for keeping our community safe.",
+      isEnhanced: newReport.isEnhanced,
+      priority: newReport.priority,
+    });
   } catch (error) {
     console.error("Error submitting report:", error);
     return res.status(500).json({ message: "Server error while submitting report." });
@@ -1001,7 +1022,20 @@ export const updateReportStatus = async (req, res) => {
     await report.save();
 
     if (actionTaken === "remove_post" && report.postid) {
-      await Post.findByIdAndUpdate(report.postid, { status: "removed" });
+      const removedPost = await Post.findByIdAndUpdate(
+        report.postid,
+        { status: "removed" },
+        { new: true }
+      );
+      if (removedPost && removedPost.userid) {
+        await deductAdminContentRemoval(
+          removedPost.userid,
+          report.postid,
+          "post",
+          report.reason || "Confirmed guideline violation",
+          userid
+        );
+      }
     }
 
     return res.status(200).json({ message: "Report updated successfully.", report });
