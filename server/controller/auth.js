@@ -11,6 +11,7 @@ import SecurityEvent from "../models/securityEvent.js";
 import LanguageOtp from "../models/languageOtp.js";
 import { parseUserAgent, getClientIp, hashToken } from "../utils/deviceParser.js";
 import { sendNewDeviceLoginAlert } from "../services/securityEmailService.js";
+import { awardProfileCompleted } from "../services/reputationService.js";
 
 // Helper: Mask email
 const maskEmail = (email = "") => {
@@ -389,6 +390,21 @@ export const updateprofile = async (req, res) => {
       { $set: { name: name, about: about, tags: tags } },
       { new: true }
     );
+
+    // Check if mandatory fields (name, about, tags) are completed
+    if (
+      name &&
+      typeof name === "string" &&
+      name.trim().length > 0 &&
+      about &&
+      typeof about === "string" &&
+      about.trim().length > 0 &&
+      Array.isArray(tags) &&
+      tags.length > 0
+    ) {
+      await awardProfileCompleted(_id);
+    }
+
     res.status(200).json({ data: updateprofile });
   } catch (error) {
     console.log(error);

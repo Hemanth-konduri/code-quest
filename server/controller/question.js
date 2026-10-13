@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 import question from "../models/question.js";
 import User from "../models/auth.js";
 import { incrementDailyQuestionCount } from "../middleware/checkDailyLimit.js";
+import {
+  awardQuestionMilestone10Upvotes,
+  deductDownvote,
+} from "../services/reputationService.js";
 
 export const Askquestion = async (req, res) => {
   const { postquestiondata } = req.body;
@@ -65,42 +69,73 @@ export const deletequestion = async (req, res) => {
 export const votequestion = async (req, res) => {
   const { id: _id } = req.params;
   const { value, userid } = req.body;
+  const voterId = req.userid || userid;
+
   if (!mongoose.Types.ObjectId.isValid(_id)) {
     return res.status(400).json({ message: "question unavailable" });
   }
+
+  if (!voterId) {
+    return res.status(401).json({ message: "Authentication required to vote" });
+  }
+
   try {
     const questionDoc = await question.findById(_id);
-    const upindex = questionDoc.upvote.findIndex((id) => id === String(userid));
-    const downindex = questionDoc.downvote.findIndex(
-      (id) => id === String(userid)
-    );
+    if (!questionDoc) {
+      return res.status(404).json({ message: "question not found" });
+    }
+
+    // Anti-Abuse: Prevent self-voting on questions
+    if (questionDoc.userid && String(questionDoc.userid) === String(voterId)) {
+      return res.status(400).json({ message: "You cannot vote on your own question" });
+    }
+
+    questionDoc.upvote = questionDoc.upvote || [];
+    questionDoc.downvote = questionDoc.downvote || [];
+
+    const upindex = questionDoc.upvote.findIndex((id) => id === String(voterId));
+    const downindex = questionDoc.downvote.findIndex((id) => id === String(voterId));
+
     if (value === "upvote") {
       if (downindex !== -1) {
         questionDoc.downvote = questionDoc.downvote.filter(
-          (id) => id !== String(userid)
+          (id) => id !== String(voterId)
         );
       }
       if (upindex === -1) {
-        questionDoc.upvote.push(userid);
+        questionDoc.upvote.push(String(voterId));
+
+        // Check 10-upvote milestone bonus (+2 once)
+        if (questionDoc.upvote.length >= 10 && !questionDoc.hasAwarded10Upvotes) {
+          questionDoc.hasAwarded10Upvotes = true;
+          if (questionDoc.userid) {
+            await awardQuestionMilestone10Upvotes(questionDoc.userid, _id);
+          }
+        }
       } else {
-        questionDoc.upvote = questionDoc.upvote.filter((id) => id !== String(userid));
+        questionDoc.upvote = questionDoc.upvote.filter((id) => id !== String(voterId));
       }
     } else if (value === "downvote") {
       if (upindex !== -1) {
-        questionDoc.upvote = questionDoc.upvote.filter((id) => id !== String(userid));
+        questionDoc.upvote = questionDoc.upvote.filter((id) => id !== String(voterId));
       }
       if (downindex === -1) {
-        questionDoc.downvote.push(userid);
+        questionDoc.downvote.push(String(voterId));
+        // Deduct 2 points for downvote
+        if (questionDoc.userid) {
+          await deductDownvote(questionDoc.userid, _id, "question", voterId);
+        }
       } else {
         questionDoc.downvote = questionDoc.downvote.filter(
-          (id) => id !== String(userid)
+          (id) => id !== String(voterId)
         );
       }
     }
-    const questionvote = await question.findByIdAndUpdate(_id, questionDoc, { new: true });
-    res.status(200).json({ data: questionvote });
+
+    await questionDoc.save();
+    res.status(200).json({ data: questionDoc });
   } catch (error) {
+    console.error("votequestion error:", error);
     res.status(500).json("something went wrong..");
-    return;
   }
 };

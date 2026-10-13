@@ -7,6 +7,7 @@ import questionroute from "./routes/question.js";
 import answerroutes from "./routes/answer.js";
 import subscriptionroutes from "./routes/subscription.js";
 import communityroutes from "./routes/community.js";
+import reputationroutes from "./routes/reputation.js";
 
 const app = express();
 dotenv.config();
@@ -24,6 +25,7 @@ app.use("/question", questionroute);
 app.use("/answer", answerroutes);
 app.use("/subscription", subscriptionroutes);
 app.use("/community", communityroutes);
+app.use("/reputation", reputationroutes);
 
 const PORT = process.env.PORT || 5000;
 const databaseurl = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017/stack-overflow";

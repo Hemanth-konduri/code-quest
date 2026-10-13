@@ -11,16 +11,23 @@ const questionschema = mongoose.Schema(
     userposted: { type: String },
     userid: { type: String },
     askedon: { type: Date, default: Date.now },
+    acceptedAnswerId: { type: String, default: null },
+    hasAwarded10Upvotes: { type: Boolean, default: false },
     answer: [
       {
         answerbody: String,
         useranswered: String,
         userid: String,
         answeredon: { type: Date, default: Date.now },
+        upvote: { type: [String], default: [] },
+        downvote: { type: [String], default: [] },
+        isAccepted: { type: Boolean, default: false },
+        hasAwarded5Upvotes: { type: Boolean, default: false },
+        hasAwardedAnswerPost: { type: Boolean, default: false },
       },
     ],
   },
-  { timestamp: true }
+  { timestamps: true }
 );
 
 export default mongoose.model("question", questionschema);
