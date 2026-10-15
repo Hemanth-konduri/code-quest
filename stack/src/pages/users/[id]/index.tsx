@@ -19,6 +19,7 @@ import { Calendar, Edit, Plus, X } from "lucide-react";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import ReputationSection from "@/components/ReputationSection";
 
 const index = () => {
   const { user } = useAuth();
@@ -278,6 +279,16 @@ const index = () => {
             </div>
           </div>
         </div>
+
+        {/* Reputation & Community Rewards Section */}
+        <div className="mb-8">
+          <ReputationSection
+            userId={String(id)}
+            isOwnProfile={isOwnProfile}
+            userName={users.name}
+          />
+        </div>
+
         <div className="grid grid-cols-1  gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card>

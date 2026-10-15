@@ -1,13 +1,41 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axiosinstance";
-import { Bell, CheckCheck, Heart, MessageSquare, AtSign, UserPlus, X } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  Heart,
+  MessageSquare,
+  AtSign,
+  UserPlus,
+  X,
+  Award,
+  Coins,
+  Shield,
+  TrendingUp,
+  Send,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 
 interface NotificationItem {
   _id: string;
-  actorId: { _id: string; name: string; planBadge?: string };
-  type: "like" | "comment" | "reply" | "mention" | "follow";
+  actorId?: { _id: string; name: string; planBadge?: string };
+  type:
+    | "like"
+    | "comment"
+    | "reply"
+    | "mention"
+    | "follow"
+    | "reputation_earned"
+    | "reputation_deducted"
+    | "reputation_transfer_received"
+    | "reputation_transfer_sent"
+    | "privilege_unlocked"
+    | "reputation_adjusted";
   postid?: { _id: string; content: string };
+  message?: string;
+  pointsChange?: number;
+  privilege?: string;
   read: boolean;
   createdAt: string;
 }
@@ -70,12 +98,25 @@ export default function NotificationsDrawer({
         return <AtSign className="w-4 h-4 text-orange-500" />;
       case "follow":
         return <UserPlus className="w-4 h-4 text-purple-500" />;
+      case "reputation_earned":
+        return <TrendingUp className="w-4 h-4 text-emerald-600" />;
+      case "reputation_deducted":
+        return <AlertCircle className="w-4 h-4 text-red-600" />;
+      case "reputation_transfer_received":
+        return <Coins className="w-4 h-4 text-amber-500" />;
+      case "reputation_transfer_sent":
+        return <Send className="w-4 h-4 text-blue-600" />;
+      case "privilege_unlocked":
+        return <Award className="w-4 h-4 text-yellow-500" />;
+      case "reputation_adjusted":
+        return <Shield className="w-4 h-4 text-indigo-600" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const renderText = (item: NotificationItem) => {
+    if (item.message) return item.message;
     switch (item.type) {
       case "like":
         return "liked your post.";
@@ -87,6 +128,12 @@ export default function NotificationsDrawer({
         return "mentioned you in a post/comment.";
       case "follow":
         return "started following you.";
+      case "reputation_earned":
+        return `Earned +${item.pointsChange || 0} reputation points.`;
+      case "reputation_deducted":
+        return `Deducted ${item.pointsChange || 0} reputation points.`;
+      case "privilege_unlocked":
+        return `New privilege unlocked: ${item.privilege || "Community Privilege"}`;
       default:
         return "interacted with your content.";
     }
@@ -131,7 +178,10 @@ export default function NotificationsDrawer({
                 <div className="mt-0.5">{renderIcon(item.type)}</div>
                 <div className="flex-1 space-y-0.5">
                   <p className="text-gray-800">
-                    <span className="font-bold">{item.actorId?.name}</span> {renderText(item)}
+                    {item.actorId?.name ? (
+                      <span className="font-bold">{item.actorId.name} </span>
+                    ) : null}
+                    {renderText(item)}
                   </p>
                   {item.postid && (
                     <p className="text-[11px] text-gray-500 line-clamp-1 italic">

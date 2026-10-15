@@ -1,7 +1,7 @@
 import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
 import { MembershipBadge } from "@/components/MembershipBadge";
-import { Menu, Search, Bell, Users, Shield, ShieldAlert } from "lucide-react";
+import { Menu, Search, Bell, Users, Shield, ShieldAlert, Award } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import NotificationsDrawer from "./community/NotificationsDrawer";
@@ -60,6 +60,14 @@ const Navbar = ({ handleslidein }: any) => {
               <span>{t("nav.plans")}</span>
             </Link>
 
+            <Link
+              href="/users/reputation"
+              className="text-sm text-amber-700 font-medium px-3 py-1.5 rounded hover:bg-amber-50 border border-amber-200 transition flex items-center gap-1"
+            >
+              <Award className="w-4 h-4 text-amber-600" />
+              <span>Reputation</span>
+            </Link>
+
             {user?.role === "admin" && (
               <>
                 <Link
@@ -75,6 +83,13 @@ const Navbar = ({ handleslidein }: any) => {
                 >
                   <ShieldAlert className="w-4 h-4" />
                   <span>Security</span>
+                </Link>
+                <Link
+                  href="/admin/reputation"
+                  className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition flex items-center gap-1"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>Audit</span>
                 </Link>
               </>
             )}
