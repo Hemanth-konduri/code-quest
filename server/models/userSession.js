@@ -29,7 +29,6 @@ const userSessionSchema = new mongoose.Schema(
 );
 
 userSessionSchema.index({ userid: 1, status: 1 });
-userSessionSchema.index({ sessionTokenHash: 1 });
 
 export default mongoose.models.UserSession ||
   mongoose.model("UserSession", userSessionSchema);

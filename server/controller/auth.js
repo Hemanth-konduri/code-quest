@@ -380,10 +380,16 @@ export const getallusers = async (req, res) => {
 
 export const updateprofile = async (req, res) => {
   const { id: _id } = req.params;
-  const { name, about, tags } = req.body.editForm;
+  const { name, about, tags } = req.body.editForm || {};
   if (!mongoose.Types.ObjectId.isValid(_id)) {
     return res.status(400).json({ message: "User unavailable" });
   }
+
+  // Authorization check: User can only update their own profile
+  if (!req.userid || req.userid.toString() !== _id.toString()) {
+    return res.status(403).json({ message: "Forbidden: You can only update your own profile." });
+  }
+
   try {
     const updateprofile = await user.findByIdAndUpdate(
       _id,

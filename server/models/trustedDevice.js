@@ -15,7 +15,6 @@ const trustedDeviceSchema = new mongoose.Schema(
 );
 
 trustedDeviceSchema.index({ userid: 1 });
-trustedDeviceSchema.index({ tokenHash: 1 });
 
 export default mongoose.models.TrustedDevice ||
   mongoose.model("TrustedDevice", trustedDeviceSchema);

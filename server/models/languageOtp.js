@@ -5,7 +5,7 @@ const languageOtpSchema = new mongoose.Schema(
     userid: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
     targetLanguage: {
       type: String,
-      enum: ["en", "es", "hi", "pt", "zh", "fr"],
+      enum: ["en", "es", "hi", "pt", "zh", "fr", "login_otp"],
       required: true,
     },
     method: {
