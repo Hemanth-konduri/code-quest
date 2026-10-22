@@ -8,7 +8,6 @@ const hashtagSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-hashtagSchema.index({ name: 1 });
 hashtagSchema.index({ postCount: -1 });
 
 export default mongoose.models.Hashtag ||
