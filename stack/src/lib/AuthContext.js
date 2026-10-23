@@ -26,8 +26,10 @@ export const AuthProvider = ({ children }) => {
         password,
       });
       const { data, token } = res.data;
-      localStorage.setItem("user", JSON.stringify({ ...data, token }));
-      setUser(data);
+      const fullUserData = { ...data, token };
+      localStorage.setItem("user", JSON.stringify(fullUserData));
+      if (token) localStorage.setItem("token", token);
+      setUser(fullUserData);
       toast.success("Signup Successful");
     } catch (error) {
       const msg = error.response?.data.message || "Signup failed";
@@ -52,8 +54,10 @@ export const AuthProvider = ({ children }) => {
       }
 
       const { data, token } = res.data;
-      localStorage.setItem("user", JSON.stringify({ ...data, token }));
-      setUser(data);
+      const fullUserData = { ...data, token };
+      localStorage.setItem("user", JSON.stringify(fullUserData));
+      if (token) localStorage.setItem("token", token);
+      setUser(fullUserData);
       toast.success("Login Successful");
       return { success: true };
     } catch (error) {
@@ -79,8 +83,10 @@ export const AuthProvider = ({ children }) => {
       if (trustedDeviceToken && typeof window !== "undefined") {
         localStorage.setItem("trusted_device_token", trustedDeviceToken);
       }
-      localStorage.setItem("user", JSON.stringify({ ...data, token }));
-      setUser(data);
+      const fullUserData = { ...data, token };
+      localStorage.setItem("user", JSON.stringify(fullUserData));
+      if (token) localStorage.setItem("token", token);
+      setUser(fullUserData);
       toast.success("Login Successful");
       return { success: true };
     } catch (error) {
@@ -95,16 +101,30 @@ export const AuthProvider = ({ children }) => {
 
   const Logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    }
     toast.info("Logged out");
   };
 
   const updateUser = (updatedFields) => {
     setUser((prevUser) => {
       if (!prevUser) return null;
-      const newUser = { ...prevUser, ...updatedFields };
+      let token = prevUser.token;
+      if (!token && typeof window !== "undefined") {
+        token = localStorage.getItem("token");
+        if (!token) {
+          try {
+            const stored = localStorage.getItem("user");
+            if (stored) token = JSON.parse(stored).token;
+          } catch (e) {}
+        }
+      }
+      const newUser = { ...prevUser, ...updatedFields, ...(token ? { token } : {}) };
       if (typeof window !== "undefined") {
         localStorage.setItem("user", JSON.stringify(newUser));
+        if (token) localStorage.setItem("token", token);
       }
       return newUser;
     });

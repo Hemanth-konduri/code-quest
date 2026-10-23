@@ -8,12 +8,19 @@ const axiosInstance = axios.create({
 });
 axiosInstance.interceptors.request.use((req) => {
   if (typeof window !== "undefined") {
+    let token = null;
     const user = localStorage.getItem("user");
     if (user) {
-      const token = JSON.parse(user).token;
-      if (token) {
-        req.headers.Authorization = `Bearer ${token}`;
-      }
+      try {
+        const parsed = JSON.parse(user);
+        token = parsed?.token || parsed?.token_id;
+      } catch (e) {}
+    }
+    if (!token) {
+      token = localStorage.getItem("token");
+    }
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
     }
     const trustedToken = localStorage.getItem("trusted_device_token");
     if (trustedToken) {
