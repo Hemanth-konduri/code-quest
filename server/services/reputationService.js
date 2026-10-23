@@ -544,14 +544,17 @@ export const transferReputation = async ({
   await recipientRep.save();
 
   // Create transfer record
-  const transfer = await ReputationTransfer.create({
+  const transferDoc = {
     senderId: parsedSenderId,
     recipientId: parsedRecipientId,
     points: transferAmount,
     reason: reason.trim(),
     status: "completed",
-    idempotencyKey: idempotencyKey || null,
-  });
+  };
+  if (idempotencyKey) {
+    transferDoc.idempotencyKey = idempotencyKey;
+  }
+  const transfer = await ReputationTransfer.create(transferDoc);
 
   // Create sender ledger entry
   const senderTx = await ReputationTransaction.create({

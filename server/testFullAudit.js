@@ -2,6 +2,14 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config();
 
 // Models
 import User from "./models/auth.js";
@@ -48,7 +56,7 @@ import {
 import { REPUTATION_RULES, PRIVILEGES, getUnlockedPrivileges } from "./utils/reputationRules.js";
 import { hashToken } from "./utils/deviceParser.js";
 
-const MONGO_URI = "mongodb+srv://kondurihemanth62_db_user:c75EN78uULspYa8v@cluster0.rgbmnrd.mongodb.net/stack-overflow?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017/stack-overflow";
 const JWT_SECRET = process.env.JWT_SECRET || "secret_key_12345";
 
 const testResults = {
@@ -515,6 +523,7 @@ async function runAudit() {
         await User.deleteOne({ _id: user1._id }).catch(() => {});
         await UserReputation.deleteMany({ userId: user1._id }).catch(() => {});
         await ReputationTransaction.deleteMany({ userId: user1._id }).catch(() => {});
+        await ReputationTransfer.deleteMany({ $or: [{ senderId: user1._id }, { recipientId: user1._id }] }).catch(() => {});
         await DailyUsage.deleteMany({ userid: user1._id }).catch(() => {});
         await UserSession.deleteMany({ userid: user1._id }).catch(() => {});
         await TrustedDevice.deleteMany({ userid: user1._id }).catch(() => {});
