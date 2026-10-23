@@ -71,11 +71,18 @@ const Navbar = ({ handleslidein }: any) => {
             {user?.role === "admin" && (
               <>
                 <Link
-                  href="/admin/moderation"
+                  href="/admin"
                   className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition flex items-center gap-1"
                 >
                   <Shield className="w-4 h-4" />
-                  <span>{t("nav.admin")}</span>
+                  <span>Admin</span>
+                </Link>
+                <Link
+                  href="/admin/moderation"
+                  className="text-sm text-purple-700 font-bold px-3 py-1.5 rounded hover:bg-purple-50 border border-purple-200 transition flex items-center gap-1"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Moderation</span>
                 </Link>
                 <Link
                   href="/admin/security"

@@ -12,15 +12,19 @@ import {
   Users,
   Sparkles,
   ShieldCheck,
+  Shield,
+  ShieldAlert,
   Award,
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import { Badge } from "./ui/badge";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useAuth } from "@/lib/AuthContext";
 
 const Sidebar = ({ isopen }: any) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   return (
     <div>
@@ -179,6 +183,52 @@ const Sidebar = ({ isopen }: any) => {
                 {t("nav.companies")}
               </Link>
             </li>
+
+            {user?.role === "admin" && (
+              <li className="pt-3 mt-3 border-t border-purple-200">
+                <span className="px-2 text-xs font-bold text-purple-700 uppercase tracking-wider block mb-1">
+                  Admin Controls
+                </span>
+                <ul className="space-y-1">
+                  <li>
+                    <Link
+                      href="/admin"
+                      className="flex items-center px-2 py-1.5 text-purple-700 hover:bg-purple-50 rounded text-sm font-medium"
+                    >
+                      <Shield className="w-4 h-4 mr-2 lg:mr-3 text-purple-600" />
+                      Subscriptions
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/admin/moderation"
+                      className="flex items-center px-2 py-1.5 text-purple-700 hover:bg-purple-50 rounded text-sm font-medium"
+                    >
+                      <ShieldAlert className="w-4 h-4 mr-2 lg:mr-3 text-purple-600" />
+                      Content Moderation
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/admin/security"
+                      className="flex items-center px-2 py-1.5 text-purple-700 hover:bg-purple-50 rounded text-sm font-medium"
+                    >
+                      <ShieldAlert className="w-4 h-4 mr-2 lg:mr-3 text-purple-600" />
+                      Security & Devices
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/admin/reputation"
+                      className="flex items-center px-2 py-1.5 text-purple-700 hover:bg-purple-50 rounded text-sm font-medium"
+                    >
+                      <Award className="w-4 h-4 mr-2 lg:mr-3 text-purple-600" />
+                      Reputation Ledger
+                    </Link>
+                  </li>
+                </ul>
+              </li>
+            )}
           </ul>
         </nav>
       </aside>
