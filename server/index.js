@@ -21,6 +21,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/user", userroutes);
+app.use("/admin/security", (req, res, next) => {
+  req.url = "/admin/security" + req.url;
+  userroutes(req, res, next);
+});
 app.use("/question", questionroute);
 app.use("/answer", answerroutes);
 app.use("/subscription", subscriptionroutes);

@@ -32,13 +32,13 @@ export default function AdminSecurityPage() {
         const params: any = {};
         if (search) params.search = search;
         if (filterResult) params.loginResult = filterResult;
-        const res = await axiosInstance.get("/admin/security/login-activity", { params });
+        const res = await axiosInstance.get("/user/admin/security/login-activity", { params });
         setActivities(res.data.activities || []);
       } else if (activeTab === "sessions") {
-        const res = await axiosInstance.get("/admin/security/sessions");
+        const res = await axiosInstance.get("/user/admin/security/sessions");
         setSessions(res.data.sessions || []);
       } else if (activeTab === "events") {
-        const res = await axiosInstance.get("/admin/security/events");
+        const res = await axiosInstance.get("/user/admin/security/events");
         setEvents(res.data.events || []);
       }
     } catch (error: any) {
@@ -59,7 +59,7 @@ export default function AdminSecurityPage() {
   const handleAdminRevoke = async (sessionId: string) => {
     if (!confirm("Remotely revoke this session as administrator?")) return;
     try {
-      await axiosInstance.delete(`/admin/security/sessions/${sessionId}`);
+      await axiosInstance.delete(`/user/admin/security/sessions/${sessionId}`);
       toast.success("Session revoked successfully.");
       setSessions((prev) => prev.filter((s) => s._id !== sessionId));
     } catch (error: any) {
